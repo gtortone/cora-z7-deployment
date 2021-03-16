@@ -19,8 +19,10 @@
 };
 
 &gem0 {
+
 	/* MAC address of board is available on sticker */
 	local-mac-address = [00 18 3e 03 66 3f];
+
 	phy-handle = <&ethernet_phy>;
 	ethernet_phy: ethernet-phy@1 { /* rtl8211e-vl */
 		reg = <1>;
