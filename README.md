@@ -107,6 +107,10 @@ executable.elf
 
 ```
 git clone https://github.com/Xilinx/device-tree-xlnx.git
+
+cd device-tree-xlnx
+
+git checkout xilinx-v2018.3
 ```
 
 ```
