@@ -233,6 +233,11 @@ boot.bin
 uImage
 devicetree.dtb
 ```
+ethaddr=00:18:3E:03:66:F6
+In order to properly configure MAC address create uEnv.txt file with this content:
+```
+ethaddr=00:18:3E:03:66:F6
+```
 
 ### on ROOTFS partition
 ```
