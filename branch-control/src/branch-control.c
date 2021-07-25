@@ -7,14 +7,22 @@
 #include <sys/mman.h>
 #include "argparse.h"
 
-#define POWER1V5     (1)
-#define POWER3V8     (1<<1)
-#define CLOCK        (1<<2)
-#define GOOD1V5      (1<<16)
-#define GOOD3V8      (1<<17)
-
 #define MAP_SIZE     0x10000
 #define MAX_ADDRESS  0x0
+
+union reg0 {
+   struct { 
+      unsigned int power1v5 : 1;
+      unsigned int power3v8 : 1;
+      unsigned int clock : 1;
+      unsigned int reserved0 : 13;
+      unsigned int good1v5 : 1;
+      unsigned int good3v8 : 1;
+      unsigned int reserved1 : 14;
+   } field;
+
+   unsigned int dword;   
+};
 
 int main(int argc, const char **argv) {
 
@@ -23,11 +31,12 @@ int main(int argc, const char **argv) {
    bool poll1v5 = false;
    bool poll3v8 = false;
    const char *clock = NULL;
-   int regaddr = -1;
-   int regval = -1; 
+   unsigned int regaddr = -1;
+   unsigned int regval = -1; 
 
-   volatile int *ptr;
-   int regval0 = 0;
+   volatile unsigned int *ptr;
+   union reg0 r0;          // register 0 from hardware
+   union reg0 r0new;       // register 0 to set
 
    static const char *const usage[] = {
       "lc [options]",
@@ -66,7 +75,7 @@ int main(int argc, const char **argv) {
       exit(-1);
    }
 
-   ptr = (volatile int *) mmap(NULL, MAP_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+   ptr = (volatile unsigned int *) mmap(NULL, MAP_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
 
    // check if raw register access is required
    if(regaddr != -1) {
@@ -83,21 +92,21 @@ int main(int argc, const char **argv) {
    }
 
    // read register
-   regval0 = ptr[0];
+   r0.dword = r0new.dword = ptr[0];
    printf("\n");
 
    if(power1v5 != NULL) {
       if(!strcmp(power1v5, "on") || !strcmp(power1v5, "ON")) {
          printf("User request: Power 1.5V: ON\n");
-         regval0 |= POWER1V5; 
-         if((ptr[0] & POWER1V5) == 0)     // current state: OFF - required state: ON
+         r0new.field.power1v5 = 1;
+         if(r0.field.power1v5 == 0) // current state: OFF - required state: ON
             poll1v5 = true;
          else
             printf("-- Power 1.5V is already ON\n");
       } else if(!strcmp(power1v5, "off") || !strcmp(power1v5, "OFF")) {
          printf("User request: Power 1.5V: OFF\n");
-         regval0 &= ~POWER1V5;
-         if(ptr[0] & POWER1V5)            // current state: ON - required state: OFF
+         r0new.field.power1v5 = 0;
+         if(r0.field.power1v5)      // current state: ON - required state: OFF
             poll1v5 = true;
          else
             printf("-- Power 1.5V is already OFF\n");
@@ -109,15 +118,15 @@ int main(int argc, const char **argv) {
    if(power3v8 != NULL) {      
       if(!strcmp(power3v8, "on") || !strcmp(power3v8, "ON")) {
          printf("User request: Power 3.8V: ON\n");
-         regval0 |= POWER3V8;
-         if((ptr[0] & POWER3V8) == 0)     // current state: OFF - required state: ON
+         r0new.field.power3v8 = 1;
+         if(r0.field.power3v8 == 0) // current state: OFF - required state: ON
             poll3v8 = true;
          else
             printf("-- Power 3.8V is already ON\n");
       } else if(!strcmp(power3v8, "off") || !strcmp(power3v8, "OFF")) {
          printf("User request: Power 3.8V: OFF\n");
-         regval0 &= ~POWER3V8;
-         if(ptr[0] & POWER3V8)            // current state: ON - required state: OFF
+         r0new.field.power3v8 = 0;
+         if(r0.field.power3v8)      // current state: ON - required state: OFF
             poll3v8 = true;
          else
             printf("-- Power 3.8V is already OFF\n");
@@ -129,13 +138,13 @@ int main(int argc, const char **argv) {
    if(clock != NULL) {
       if(!strcmp(clock, "on") || !strcmp(clock, "ON")) {
          printf("User request: Clock: ON\n");
-         regval0 |= CLOCK;
-         if((ptr[0] & CLOCK))             // current state: ON - required state: ON
+         r0new.field.clock = 1; 
+         if(r0.field.clock)      // current state: ON - required state: ON
             printf("-- Clock is already ON\n");
       } else if(!strcmp(clock, "off") || !strcmp(clock, "OFF")) {
          printf("User request: Clock: OFF\n");
-         regval0 &= ~CLOCK;
-         if((ptr[0] & CLOCK) == 0)        // current state: OFF - required state: OFF
+         r0new.field.clock = 0;
+         if(r0.field.clock == 0) // current state: OFF - required state: OFF
             printf("-- Clock is already OFF\n"); 
       } else {
          printf("E: Clock wrong parameter (should be 'on' or 'off')\n");
@@ -143,24 +152,27 @@ int main(int argc, const char **argv) {
    }
 
    // write register
-   if(regval0 != ptr[0]) {
+   if(r0new.dword != r0.dword) {
 
-      ptr[0] = regval0;
+      ptr[0] = r0new.dword;
 
       if(poll1v5 || poll3v8) {
 
          printf("\nCheck power status...\n");
 
          for(int i=0; i<20; i++) {
+
+            r0.dword = ptr[0];
+
             if(poll1v5) {
                usleep(10000);
-               if(ptr[0] & POWER1V5) {    // expect status == GOOD
-                  if(ptr[0] & GOOD1V5) {
+               if(r0.field.power1v5) {    // expect status == GOOD
+                  if(r0.field.good1v5) {
                      printf("I: power status 1.5V changed to GOOD\n");
                      poll1v5 = false;
                   }
                } else {                      // expect status == NOT GOOD
-                  if((ptr[0] & GOOD1V5) == 0) {
+                  if(!r0.field.good1v5) {
                      printf("I: power status 1.5V changed to NOT GOOD\n");
                      poll1v5 = false;
                   }
@@ -169,13 +181,13 @@ int main(int argc, const char **argv) {
 
             if(poll3v8) {
                usleep(10000);
-               if(ptr[0] & POWER3V8) {    // expect status == GOOD
-                  if(ptr[0] & GOOD3V8) {
+               if(r0.field.power3v8) {    // expect status == GOOD
+                  if(r0.field.good3v8) {
                      printf("I: power status 3.8V changed to GOOD\n");
                      poll3v8 = false;
                   }
                } else {                      // expect status == NOT GOOD
-                  if((ptr[0] & GOOD3V8) == 0) {
+                  if(!r0.field.good3v8 == 0) {
                      printf("I: power status 3.8V changed to NOT GOOD\n");
                      poll3v8 = false;
                   }
@@ -194,20 +206,20 @@ int main(int argc, const char **argv) {
       printf("ERROR: power status 3.8V NOT changed !!!\n");
    }
 
-   regval0 = ptr[0];
+   r0.dword = ptr[0];
    // print status
    printf("\nBranch status\n");
    printf("-------------\n");
    printf("Power 1.5V: ");
-   (regval0 & POWER1V5)?printf("ON\n"):printf("OFF\n");
+   (r0.field.power1v5)?printf("ON\n"):printf("OFF\n");
    printf("Power 3.8V: ");
-   (regval0 & POWER3V8)?printf("ON\n"):printf("OFF\n");
+   (r0.field.power3v8)?printf("ON\n"):printf("OFF\n");
    printf("Clock: ");
-   (regval0 & CLOCK)?printf("ON\n"):printf("OFF\n");
+   (r0.field.clock)?printf("ON\n"):printf("OFF\n");
    printf("Power status 1.5V: ");
-   (regval0 & GOOD1V5)?printf("GOOD\n"):printf("NOT GOOD\n");
+   (r0.field.good1v5)?printf("GOOD\n"):printf("NOT GOOD\n");
    printf("Power status 3.8V: ");
-   (regval0 & GOOD3V8)?printf("GOOD\n"):printf("NOT GOOD\n");
+   (r0.field.good3v8)?printf("GOOD\n"):printf("NOT GOOD\n");
    printf("\n");
    
    return 0;
