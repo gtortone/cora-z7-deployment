@@ -87,7 +87,7 @@ int main(int argc, const char **argv) {
          // write register
          ptr[regaddr] = regval;
       }
-      printf("0x%X\n", ptr[regaddr]);
+      printf("0x%08X\n", ptr[regaddr]);
       exit(0);
    }
 
