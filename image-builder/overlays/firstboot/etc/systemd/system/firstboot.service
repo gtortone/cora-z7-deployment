@@ -1,0 +1,8 @@
+[Unit]
+Description=One time boot script
+[Service]
+Type=simple
+ExecStart=/firstboot.sh
+[Install]
+WantedBy=multi-user.target 
+

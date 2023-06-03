@@ -1,0 +1,10 @@
+auto eth0
+iface eth0 inet dhcp
+
+#---- change here to configure static IP address
+#iface eth0 inet static
+#      address 172.16.2.137
+#      netmask 255.255.0.0
+#      gateway 172.16.0.254
+#      dns-nameservers 192.84.134.50, 192.84.134.55
+#----

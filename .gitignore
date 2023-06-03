@@ -1,0 +1,4 @@
+image-builder/*.bmap
+image-builder/*.img.gz
+image-builder/overlays/boot/image.ub
+image-builder/overlays/boot/modules.tar.gz

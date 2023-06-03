@@ -1,0 +1,175 @@
+{{- $image := or .image "debian11.img" -}}
+
+architecture: armhf
+
+actions:
+
+  - action: debootstrap
+    suite: "bullseye"
+    components:
+      - main
+    mirror: https://deb.debian.org/debian
+    variant: minbase
+
+  - action: apt
+    packages: 
+      - sudo
+      - openssh-server
+      - systemd-sysv
+
+  - action: run
+    chroot: true
+    command: echo coraz7 > /etc/hostname
+
+  - action: apt
+    packages:
+      - apt-utils
+      - dialog
+      - locales
+
+  - action: apt
+    packages:
+      - minicom
+      - picocom
+      - curl
+      - haveged
+      - dhcpcd5
+      - fdisk
+      - udev 
+      - netbase 
+      - ifupdown 
+      - iputils-ping 
+      - wget 
+      - net-tools
+      - ntpdate
+      - nano
+      - less
+      - kmod 
+      - vim
+      - file
+
+  - action: apt
+    packages:
+      - parted
+      - git
+      - ca-certificates
+      - libftdi1
+      - libftdi1-dev
+
+  - action: apt
+    packages:
+      - man-db
+      - gcc 
+      - g++ 
+      - tcl
+      - python3
+      - python3-pip
+      - make 
+      - pkg-config 
+      - ntp 
+      - libusb-dev 
+      - cmake 
+      - zlib1g 
+      - zlib1g-dev 
+      - xc3sprog 
+      - usbutils
+
+  - action: run
+    chroot: true
+    script: scripts/build-xvc-adaptive.sh
+
+  - action: run
+    chroot: true
+    script: scripts/build-openfpgaloader.sh
+
+  - action: run
+    chroot: true
+    script: scripts/build-branch-control.sh
+
+  - action: overlay
+    source: overlays/boot
+    destination: /boot
+
+  - action: run
+    chroot: true
+    script: scripts/untar-modules.sh
+
+  - action: run
+    chroot: true
+    command: echo "en_US.UTF-8 UTF-8" > /etc/locale.gen; /usr/sbin/locale-gen; /usr/sbin/update-locale LANG=en_US.UTF-8
+
+  - action: overlay
+    source: overlays/sshd
+    destination: /etc/ssh
+
+  - action: overlay
+    source: overlays/bash/bashrc
+    destination: /root/.bashrc
+
+  - action: overlay
+    source: overlays/network
+    destination: /etc/network/interfaces.d
+
+  - action: run
+    chroot: true
+    command: ln -s /boot /lib/firmware
+
+  - action: overlay
+    source: overlays/rc
+    destination: /etc
+
+  - action: overlay
+    source: overlays/motd
+    destination: /etc
+
+  - action: overlay
+    source: overlays/firstboot
+    destination: /
+
+  - action: run
+    chroot: true
+    command: systemctl enable firstboot.service
+
+  - action: run
+    chroot: true
+    command: systemctl enable serial-getty@ttyPS0.service
+
+  - action: run
+    chroot: true
+    command: echo "ttyPS0" >> /etc/securetty
+
+  - action: run
+    chroot: true
+    command: echo 'root:$1$TzpfaNEc$tjqCamkIJFUytJokydS8w.' | /usr/sbin/chpasswd -e
+
+  - action: image-partition
+    imagename: {{ $image }}
+    imagesize: 1.5GB
+    partitiontype: msdos
+    mountpoints:
+      - mountpoint: /boot
+        partition: boot
+      - mountpoint: /
+        partition: rootfs
+    partitions:
+      - name: boot 
+        fs: fat32
+        start: 0%
+        end: 250 
+        flags: [ boot ]
+      - name: rootfs
+        features: ["^orphan_file"]
+        fs: ext4
+        start: 250MB
+        end: 100%
+
+  - action: filesystem-deploy
+    description: Deploying filesystem onto image
+
+  - action: run
+    postprocess: true
+    command: bmaptool create {{ $image }} > {{ $image }}.bmap
+
+  - action: run
+    postprocess: true
+    command: gzip -f {{ $image }}
