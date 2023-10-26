@@ -1,0 +1,35 @@
+
+architecture: armhf
+
+actions:
+
+  - action: debootstrap
+    suite: "bullseye"
+    components:
+      - main
+    mirror: https://deb.debian.org/debian
+    variant: minbase
+
+  - action: apt
+    packages:
+      - locales
+      - wget 
+      - file
+      - git
+      - gcc 
+      - g++ 
+      - make 
+      - cmake
+      - pkg-config 
+      - zlib1g 
+      - zlib1g-dev 
+      - libftdi1
+      - libftdi1-dev
+
+  - action: run
+    chroot: true
+    script: ../scripts/build-openfpgaloader.sh
+
+  - action: pack
+    file: tarballs/openfpgaloader-rootfs.tar.gz
+

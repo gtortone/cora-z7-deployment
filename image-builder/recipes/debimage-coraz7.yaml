@@ -11,26 +11,48 @@ actions:
     mirror: https://deb.debian.org/debian
     variant: minbase
 
-  - action: apt
-    packages: 
-      - sudo
-      - openssh-server
-      - systemd-sysv
-
   - action: run
     chroot: true
     command: echo coraz7 > /etc/hostname
 
+  - action: unpack
+    file: tarballs/openfpgaloader.tar.gz
+
+  - action: unpack
+    file: tarballs/xvc-adaptive.tar.gz
+  
+  - action: unpack
+    file: tarballs/epics.tar.gz
+
+  - action: unpack
+    file: tarballs/bitstreams.tar.gz
+
+  - action: unpack
+    file: tarballs/configio-master.tar.gz
+
+  - action: unpack
+    file: tarballs/runcontrol.tar.gz
+
+  - action: unpack
+    file: tarballs/utils.tar.gz
+
   - action: apt
-    packages:
+    packages: 
+      - dbus
+      - telnet
+      - socat
+      - netcat
+      - iptables
+      - sudo
+      - openssh-server
+      - systemd-sysv
       - apt-utils
       - dialog
       - locales
-
-  - action: apt
-    packages:
       - minicom
       - picocom
+      - screen
+      - ser2net
       - curl
       - haveged
       - dhcpcd5
@@ -47,17 +69,11 @@ actions:
       - kmod 
       - vim
       - file
-
-  - action: apt
-    packages:
       - parted
       - git
       - ca-certificates
       - libftdi1
       - libftdi1-dev
-
-  - action: apt
-    packages:
       - man-db
       - gcc 
       - g++ 
@@ -73,41 +89,40 @@ actions:
       - zlib1g-dev 
       - xc3sprog 
       - usbutils
+      - perl
+      - libpcre3
+      - libpcre3-dev
 
   - action: run
     chroot: true
-    script: scripts/build-xvc-adaptive.sh
-
-  - action: run
-    chroot: true
-    script: scripts/build-openfpgaloader.sh
-
-  - action: run
-    chroot: true
-    script: scripts/build-branch-control.sh
+    script: ../scripts/build-branch-control.sh
 
   - action: overlay
-    source: overlays/boot
+    source: ../overlays/boot
     destination: /boot
 
   - action: run
     chroot: true
-    script: scripts/untar-modules.sh
+    script: ../scripts/untar-modules.sh
 
   - action: run
     chroot: true
     command: echo "en_US.UTF-8 UTF-8" > /etc/locale.gen; /usr/sbin/locale-gen; /usr/sbin/update-locale LANG=en_US.UTF-8
 
   - action: overlay
-    source: overlays/sshd
+    source: ../overlays/sshd
     destination: /etc/ssh
 
   - action: overlay
-    source: overlays/bash/bashrc
+    source: ../overlays/bash/bashrc
     destination: /root/.bashrc
 
   - action: overlay
-    source: overlays/network
+    source: ../overlays/vim/vimrc
+    destination: /root/.vimrc
+
+  - action: overlay
+    source: ../overlays/network
     destination: /etc/network/interfaces.d
 
   - action: run
@@ -115,15 +130,23 @@ actions:
     command: ln -s /boot /lib/firmware
 
   - action: overlay
-    source: overlays/rc
+    source: ../overlays/rc
     destination: /etc
 
   - action: overlay
-    source: overlays/motd
+    source: ../overlays/motd
     destination: /etc
 
   - action: overlay
-    source: overlays/firstboot
+    source: ../overlays/ser2net/etc
+    destination: /etc
+
+  - action: overlay
+    source: ../overlays/ser2net/lib
+    destination: /lib
+
+  - action: overlay
+    source: ../overlays/firstboot
     destination: /
 
   - action: run
@@ -136,6 +159,10 @@ actions:
 
   - action: run
     chroot: true
+    command: systemctl enable ser2net.service
+
+  - action: run
+    chroot: true
     command: echo "ttyPS0" >> /etc/securetty
 
   - action: run
@@ -144,7 +171,7 @@ actions:
 
   - action: image-partition
     imagename: {{ $image }}
-    imagesize: 1.5GB
+    imagesize: 2.2GB
     partitiontype: msdos
     mountpoints:
       - mountpoint: /boot

@@ -6,7 +6,7 @@ echo "copy PetaLinux files..."
 cp $PL_PROJECT_BASE/image.ub overlays/boot
 cp $PL_PROJECT_BASE/modules.tar.gz overlays/boot
 echo "start Linux image build..."
-sudo debos -t image:coraz7-pl-debian11.img --cpus=8 --disable-fakemachine debimage-coraz7.yaml
+sudo debos -t image:images/coraz7-pl-debian11.img --cpus=8 --disable-fakemachine recipes/debimage-coraz7.yaml
 
 sudo losetup -D
 

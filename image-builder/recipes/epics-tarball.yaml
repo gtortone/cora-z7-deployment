@@ -1,0 +1,38 @@
+
+architecture: armhf
+
+actions:
+
+  - action: debootstrap
+    suite: "bullseye"
+    components:
+      - main
+    mirror: https://deb.debian.org/debian
+    variant: minbase
+
+  - action: apt
+    packages:
+      - apt-utils
+      - dialog
+      - locales
+      - wget 
+      - file
+      - git
+      - gcc 
+      - g++ 
+      - tcl
+      - make 
+      - pkg-config 
+      - zlib1g 
+      - zlib1g-dev 
+      - perl
+      - libpcre3
+      - libpcre3-dev
+
+  - action: run
+    chroot: true
+    script: ../scripts/build-epics.sh
+
+  - action: pack
+    file: tarballs/epics-rootfs.tar.gz
+

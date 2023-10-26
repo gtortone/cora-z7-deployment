@@ -2,5 +2,8 @@ image-builder/*.bmap
 image-builder/*.img.gz
 image-builder/overlays/boot/image.ub
 image-builder/overlays/boot/modules.tar.gz
+image-builder/images
+image-builder/tarballs
 branch-control/bin/brc
 branch-control/obj/
+
