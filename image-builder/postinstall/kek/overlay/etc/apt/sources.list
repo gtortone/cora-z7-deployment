@@ -1,0 +1,2 @@
+deb http://ftp.jp.debian.org/debian/ bullseye main contrib non-free
+deb http://ftp.jp.debian.org/debian bullseye-updates main

@@ -1,4 +1,5 @@
 {{- $image := or .image "debian11.img" -}}
+{{- $postinstall := or .postinstall "none" -}}
 
 architecture: armhf
 
@@ -28,13 +29,7 @@ actions:
     file: tarballs/bitstreams.tar.gz
 
   - action: unpack
-    file: tarballs/configio-master.tar.gz
-
-  - action: unpack
-    file: tarballs/runcontrol.tar.gz
-
-  - action: unpack
-    file: tarballs/utils.tar.gz
+    file: tarballs/runcontrol_configio.tar.gz
 
   - action: apt
     packages: 
@@ -64,6 +59,7 @@ actions:
       - wget 
       - net-tools
       - ntpdate
+      - systemd-timesyncd
       - nano
       - less
       - kmod 
@@ -80,9 +76,11 @@ actions:
       - tcl
       - python3
       - python3-pip
+      - python3-dev
+      - libpython3-dev
+      - swig
       - make 
       - pkg-config 
-      - ntp 
       - libusb-dev 
       - cmake 
       - zlib1g 
@@ -92,14 +90,36 @@ actions:
       - perl
       - libpcre3
       - libpcre3-dev
+      - supervisor
+      - python3-numpy
+
+  - action: run
+    chroot: false
+    command: cp -r ${ARTIFACTDIR}/postinstall/{{ $postinstall }}/* ${ROOTDIR}/boot
+
+  - action: run
+    chroot: false
+    command: cp -r ${ARTIFACTDIR}/postinstall/{{ $postinstall }}/boardfiles/* ${ROOTDIR}/boot
+
+  - action: run
+    chroot: false
+    command: cp -r ${ARTIFACTDIR}/overlays/boot/* ${ROOTDIR}/boot
 
   - action: run
     chroot: true
     script: ../scripts/build-branch-control.sh
 
-  - action: overlay
-    source: ../overlays/boot
-    destination: /boot
+  - action: run
+    chroot: true
+    script: ../scripts/build-leaf-monitor.sh
+
+  - action: run
+    chroot: true
+    script: ../scripts/build-xadc-ioc.sh
+
+  - action: run
+    chroot: true
+    script: ../scripts/build-gpd4303s-ioc.sh
 
   - action: run
     chroot: true
@@ -163,6 +183,10 @@ actions:
 
   - action: run
     chroot: true
+    command: systemctl enable supervisor.service
+
+  - action: run
+    chroot: true
     command: echo "ttyPS0" >> /etc/securetty
 
   - action: run
@@ -171,7 +195,7 @@ actions:
 
   - action: image-partition
     imagename: {{ $image }}
-    imagesize: 2.2GB
+    imagesize: 3GB
     partitiontype: msdos
     mountpoints:
       - mountpoint: /boot

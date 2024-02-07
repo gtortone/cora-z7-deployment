@@ -17,4 +17,7 @@
 echo 0 > /sys/class/fpga_manager/fpga0/flags
 echo system.bit.bin > /sys/class/fpga_manager/fpga0/firmware
 
+# create named FIFO
+/usr/bin/mkfifo /run/fifopipe
+
 exit 0

@@ -1,0 +1,12 @@
+#auto eth0
+#iface eth0 inet dhcp
+
+auto eth0
+iface eth0 inet static
+   address 192.168.20.80
+   netmask 255.255.255.0
+   gateway 192.168.20.1
+   up /usr/sbin/ip route add 192.168.10.0/24 dev eth0
+   up /usr/sbin/iptables -t nat -A PREROUTING -i eth0 -p udp --dport 5064 -j DNAT --to-destination 192.168.20.255
+   up /usr/sbin/iptables -A POSTROUTING -t nat -o eth0 -j MASQUERADE
+

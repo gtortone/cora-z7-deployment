@@ -1,0 +1,15 @@
+---
+
+- psu:
+    port: "/dev/ttyUSB0"
+    baudrate: 115200
+
+- epics:
+    # $HOSTNAME: machine hostname
+    prefix: "BEAST:$hostname:PS:"
+
+- http:
+    enable: on
+    url: "http://192.168.20.1:8186/write"
+    username: "monitor"
+    password: "fpga4all"
