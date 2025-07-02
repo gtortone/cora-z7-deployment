@@ -1,0 +1,19 @@
+
+mainmenu "PetaLinux System Configuration"
+config SUBSYSTEM_TYPE_LINUX
+        bool
+        default y
+        select SYSTEM_ZYNQ
+
+config SYSTEM_ZYNQ
+        bool "ZYNQ Configuration"
+        help
+          ZYNQ Configuration for petalinux project.
+          All these config options will be in /home/ubuntu/workshop/devel/Memphys/cora-z7-deployment/Memphys/petalinux/configs/config
+
+config SUBSYSTEM_DISTRO_PETALINUX
+        bool
+        default y
+        help
+
+source /home/ubuntu/workshop/devel/Memphys/cora-z7-deployment/Memphys/petalinux/configs/configs/Kconfig.main

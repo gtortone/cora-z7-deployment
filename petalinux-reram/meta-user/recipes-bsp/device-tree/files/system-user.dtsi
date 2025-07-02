@@ -1,0 +1,99 @@
+/include/ "system-conf.dtsi"
+
+/ {
+   model = "Zynq Cora Z7 Development Board";
+   compatible = "digilent,zynq-coraz7", "xlnx,zynq-7000";
+
+   aliases {
+      ethernet0 = &gem0;
+      serial0 = &uart0;
+      mmc0 = &sdhci0;
+   };
+
+   memory@0 {
+      device_type = "memory";
+      reg = <0x0 0x20000000>;
+   };
+
+   chosen {
+      bootargs = "console=ttyPS0,115200 root=/dev/mmcblk0p2 rw rootwait earlyprintk uio_pdrv_genirq.of_id=generic-uio";
+      stdout-path = "serial0:115200n8";
+   };
+
+   usb_phy0: phy0@e0002000 {
+      compatible = "ulpi-phy";
+      #phy-cells = <0>;
+      reg = <0xe0002000 0x1000>;
+      view-port = <0x0170>;
+      drv-vbus;
+   };
+
+
+   spi-gpio {
+      compatible = "spi-gpio";
+      #address-cells = <0x1>;
+      ranges;
+   
+      cs-gpios = <&axi_gpio_0 0 0>, <&axi_gpio_0 1 0>, <&axi_gpio_0 2 0>, <&axi_gpio_0 3 0>;
+      mosi-gpios = <&axi_gpio_0 4 0>;
+      sck-gpios = <&axi_gpio_0 5 0>;
+      miso-gpios = <&axi_gpio_0 6 0>;
+      num-chipselects = <4>;
+   
+      spidev@0 {
+         reg = <0>;
+         compatible = "rohm,dh2228fv"; 
+         spi-max-frequency = <25000000>;
+      };
+      spidev@1 {
+         reg = <1>;
+         compatible = "rohm,dh2228fv"; 
+         spi-max-frequency = <25000000>;
+      };
+      spidev@2 {
+         reg = <2>;
+         compatible = "rohm,dh2228fv"; 
+         spi-max-frequency = <25000000>;
+      };
+      spidev@3 {
+         reg = <3>;
+         compatible = "rohm,dh2228fv"; 
+         spi-max-frequency = <25000000>;
+      };
+   };
+};
+
+&clkc {
+   ps-clk-frequency = <50000000>;
+};
+
+&gem0 {
+   status = "okay";
+   phy-mode = "rgmii-id";
+   phy-handle = <&ethernet_phy>;
+
+   ethernet_phy: ethernet-phy@0 { /* rtl8211e-vl */
+      reg = <1>;
+      device_type = "ethernet-phy";
+   };
+};
+
+&sdhci0 {
+   u-boot,dm-pre-reloc;
+   status = "okay";
+};
+
+&uart0 {
+   u-boot,dm-pre-reloc;
+   status = "okay";
+};
+
+&uart1 {
+   u-boot,dm-pre-reloc;
+};
+
+&usb0 {
+   status = "okay";
+   dr_mode = "host";
+   usb-phy = <&usb_phy0>;
+};

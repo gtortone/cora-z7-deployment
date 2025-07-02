@@ -1,0 +1,15 @@
+diff --git a/default-uEnv.txt b/default-uEnv.txt
+new file mode 100644
+index 0000000000..eb024f7900
+--- /dev/null
++++ b/default-uEnv.txt
+@@ -0,0 +1,9 @@
++autoload=no
++nc=setenv stdout nc;setenv stdin nc
++bootdelay=5
++preboot=run importbootenv
++kernel_load_address=0x2080000
++importbootenv=load mmc 0 0x09000000 uEnv.txt && env import -t 0x09000000
++bootmmc=load mmc 0 ${kernel_load_address} image.ub && bootm ${kernel_load_address}
++bootmedia=mmc
++bootcmd=run boot${bootmedia}
